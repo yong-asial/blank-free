@@ -1,0 +1,144 @@
+version: 2.1
+jobs:
+  login:
+    docker:
+      - image: circleci/node:lts
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install Dependencies
+          command: npm i
+
+      - run:
+          name: Build
+          command: echo "build"
+
+      - run:
+          name: Login To Monaca
+          command: echo $MONACA_PASSWORD | npx monaca login $MONACA_EMAIL
+
+  upload:
+    docker:
+      - image: circleci/node:lts
+
+    steps:
+      - checkout
+
+      - run:
+          name: Login To Monaca
+          command: echo $MONACA_PASSWORD | npx monaca login $MONACA_EMAIL
+
+      - run:
+          name: Upload to Monaca Cloud
+          command: npx monaca upload --force
+
+  buildAndroidDebug:
+    docker:
+      - image: circleci/node:lts
+
+    steps:
+      - checkout
+
+      - run:
+          name: Login To Monaca
+          command: echo $MONACA_PASSWORD | npx monaca login $MONACA_EMAIL
+
+      - run:
+          name: Build Android (debug)
+          command: npx monaca remote build android --skipUpload --build-type=debug --output "./android-debug-build.apk";
+
+      - store_artifacts:
+          path: android-debug-build.apk
+
+      - run:
+          name: Remove Build File
+          command: rm -rf android-debug-build.apk
+
+  buildAndroidRelease:
+    docker:
+      - image: circleci/node:lts
+
+    steps:
+      - checkout
+
+      - run:
+          name: Login To Monaca
+          command: echo $MONACA_PASSWORD | npx monaca login $MONACA_EMAIL
+
+      - run:
+          name: Build Android (release)
+          command: npx monaca remote build android --skipUpload --build-type=release --output "./android-release-build.apk";
+
+      - store_artifacts:
+          path: android-release-build.apk
+
+      - run:
+          name: Remove Build File
+          command: rm -rf android-release-build.apk
+
+  buildIosDebug:
+    docker:
+      - image: circleci/node:lts
+
+    steps:
+      - checkout
+
+      - run:
+          name: Login To Monaca
+          command: echo $MONACA_PASSWORD | npx monaca login $MONACA_EMAIL
+
+      - run:
+          name: Build ios (debug)
+          command: npx monaca remote build ios --skipUpload --build-type=debug --output "./ios-debug-build.ipa";
+
+      - store_artifacts:
+          path: ios-debug-build.ipa
+
+      - run:
+          name: Remove Build File
+          command: rm -rf ios-debug-build.ipa
+
+  buildIosRelease:
+    docker:
+      - image: circleci/node:lts
+
+    steps:
+      - checkout
+
+      - run:
+          name: Login To Monaca
+          command: echo $MONACA_PASSWORD | npx monaca login $MONACA_EMAIL
+
+      - run:
+          name: Build ios (release)
+          command: npx monaca remote build ios --skipUpload --build-type=release --output "./ios-release-build.ipa";
+
+      - store_artifacts:
+          path: ios-release-build.ipa
+
+      - run:
+          name: Remove Build File
+          command: rm -rf ios-release-build.ipa
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - login
+      - upload:
+          requires:
+            - login
+      - buildAndroidDebug:
+          requires:
+            - upload
+      - buildAndroidRelease:
+          requires:
+            - buildAndroidDebug
+      - buildIosDebug:
+          requires:
+            - upload
+      - buildIosRelease:
+          requires:
+            - buildIosDebug

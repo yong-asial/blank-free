@@ -1,0 +1,9 @@
+/.monaca/*
+!/.monaca/project_info.json
+!/.monaca/local_properties.json
+/platforms
+.DS_Store
+*.swp
+.vscode/
+typings/
+node_modules
